@@ -414,7 +414,7 @@ jobs:
 
       - name: Install Required Tablet Desktop Components
         run: |
-          sudo chroot "$ROOTFS_MOUNT" env DEBIAN_FRONTEND=noninteractive apt-get install -y kwin-wayland plasma-session-wayland plasma-pa bluedevil powerdevil kscreen libgl1-mesa-dri mesa-vulkan-drivers pipewire-pulse libspa-0.2-bluetooth wireplumber maliit-keyboard fonts-noto-cjk fonts-noto-color-emoji
+          sudo chroot "$ROOTFS_MOUNT" env DEBIAN_FRONTEND=noninteractive apt-get install -y kwin-wayland plasma-session-wayland plasma-pa bluedevil powerdevil kscreen libgl1-mesa-dri mesa-vulkan-drivers pipewire-pulse libspa-0.2-bluetooth wireplumber maliit-keyboard fonts-noto-cjk fonts-noto-color-emoji systemd-resolved
 
       - name: "[chroot] Install Browser"
         run: sudo chroot "$ROOTFS_MOUNT" /root/sheng-build/in-chroot/25-browser.sh
@@ -460,6 +460,8 @@ jobs:
           systemctl is-enabled sheng-devauth.service
           systemctl is-enabled NetworkManager.service
           systemctl is-enabled adsprpcd-sensorspd.service
+          systemctl enable systemd-resolved.service
+          test -x /usr/lib/systemd/systemd-growfs
           # The initial password is temporary; do not expose it through SSH.
           systemctl disable ssh.service ssh.socket 2>/dev/null || true
           SH
@@ -482,6 +484,7 @@ jobs:
         if: always()
         run: |
           sudo rm -f "$ROOTFS_MOUNT/etc/resolv.conf" 2>/dev/null || true
+          sudo ln -s /run/systemd/resolve/stub-resolv.conf "$ROOTFS_MOUNT/etc/resolv.conf"
           sudo rm -f "$ROOTFS_MOUNT/root/build.pw" 2>/dev/null || true
           # 构建脚本与 deb 载荷不该留在出厂镜像里（90-verify 已跑完，可以安全删除）
           sudo rm -rf "$ROOTFS_MOUNT/root/sheng-build" 2>/dev/null || true
